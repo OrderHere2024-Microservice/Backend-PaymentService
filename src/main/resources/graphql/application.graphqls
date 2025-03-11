@@ -1,0 +1,23 @@
+scalar BigDecimal
+scalar Long
+
+type Mutation {
+    createPayment(paymentPostDto: PaymentPostDtoInput!): PaymentCreateDto!
+    getPaymentResult(paymentResultDto: PaymentResultDtoInput!): String!
+}
+
+input PaymentPostDtoInput {
+    orderId: Int!
+    amount: BigDecimal!
+    currency: String!
+}
+
+input PaymentResultDtoInput {
+    paymentId: String!
+    result: String!
+}
+
+type PaymentCreateDto {
+    paymentId: Int!
+    clientSecret: String!
+}

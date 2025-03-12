@@ -1,6 +1,10 @@
 scalar BigDecimal
 scalar Long
 
+type Query {
+    _empty: String
+}
+
 type Mutation {
     createPayment(paymentPostDto: PaymentPostDtoInput!): PaymentCreateDto!
     getPaymentResult(paymentResultDto: PaymentResultDtoInput!): String!

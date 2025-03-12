@@ -14,7 +14,7 @@ jobs:
   CI:
     uses: ./.github/workflows/CI.yml
     secrets:
-      stripe_api_key: ${{ secrets.STRIPE_API_KEY }}
+      STRIPE_API_KEY: ${{ secrets.STRIPE_API_KEY }}
 
   CD:
     runs-on: ubuntu-latest

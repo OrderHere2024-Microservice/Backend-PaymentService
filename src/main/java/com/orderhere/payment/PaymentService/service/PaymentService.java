@@ -5,6 +5,7 @@ import com.orderhere.payment.PaymentService.dto.PaymentCreateDto;
 import com.orderhere.payment.PaymentService.dto.PaymentPostDto;
 import com.orderhere.payment.PaymentService.dto.PaymentResultDto;
 import com.orderhere.payment.PaymentService.enums.PaymentStatus;
+import com.orderhere.payment.PaymentService.eventDto.PaymentSuccessEvent;
 import com.orderhere.payment.PaymentService.model.Payment;
 import com.orderhere.payment.PaymentService.repository.PaymentRepository;
 import com.stripe.exception.StripeException;
@@ -13,6 +14,7 @@ import com.stripe.param.PaymentIntentCreateParams;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -23,6 +25,7 @@ import java.math.BigDecimal;
 public class PaymentService {
 
     private final PaymentRepository paymentRepository;
+    private final KafkaTemplate<String, PaymentSuccessEvent> kafkaTemplate;
 
     @Transactional
     public PaymentCreateDto createPayment(PaymentPostDto paymentPostDto) throws StripeException {
@@ -54,21 +57,22 @@ public class PaymentService {
     }
 
     @Transactional
-    public void getPaymentResult(PaymentResultDto paymentResultDto) throws StripeException {
+    public void getPaymentResult(PaymentResultDto paymentResultDto) throws Exception {
         Payment payment = paymentRepository.getByPaymentId(paymentResultDto.getPaymentId());
         if (paymentResultDto.getResult().equals("success")) {
             PaymentIntent paymentIntent = PaymentIntent.retrieve(payment.getStripePaymentId());
             payment.setPaymentMethod(paymentIntent.getPaymentMethod());
             payment.setPaymentStatus(PaymentStatus.paid);
             paymentRepository.save(payment);
-            Integer orderId = payment.getOrderId();
-//            order.setOrderStatus(OrderStatus.preparing);
-//            orderRepository.save(order);
-            /*
-            * Let's use kafka here to send a message to the order service to update the order status
-            * */
-        }
-        else {
+
+            PaymentSuccessEvent paymentSuccessEvent = new PaymentSuccessEvent(payment.getPaymentId().toString(), payment.getOrderId().toString());
+            try {
+                kafkaTemplate.send("payment-success-topic", paymentSuccessEvent).get();
+            } catch (Exception e) {
+                log.error("Error occurred while sending payment success event", e);
+                throw new Exception("Error occurred while sending payment success event");
+            }
+        } else {
             payment.setPaymentStatus(PaymentStatus.failed);
             paymentRepository.save(payment);
         }

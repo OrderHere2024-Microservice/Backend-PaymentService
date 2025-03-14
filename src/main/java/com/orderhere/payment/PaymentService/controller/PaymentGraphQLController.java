@@ -45,6 +45,8 @@ public class PaymentGraphQLController {
         } catch (StripeException e) {
             log.error("Stripe error occurred: {}", e.getMessage());
             throw new RuntimeException("Failed to process payment result: " + e.getMessage());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 }

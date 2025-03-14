@@ -17,7 +17,7 @@ input PaymentPostDtoInput {
 }
 
 input PaymentResultDtoInput {
-    paymentId: String!
+    paymentId: Int!
     result: String!
 }
 
